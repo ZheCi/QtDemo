@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug",
+  "command": "/usr/bin/g++ -DQT_CONCURRENT_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/include -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtConcurrent -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always -mno-direct-extern-access -o CMakeFiles/SSH_Test.dir/SSH_Test_autogen/mocs_compilation.cpp.o -c /home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/mocs_compilation.cpp",
+  "file": "/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/mocs_compilation.cpp",
+  "output": "CMakeFiles/SSH_Test.dir/SSH_Test_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug",
+  "command": "/usr/bin/g++ -DQT_CONCURRENT_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/include -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtConcurrent -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always -mno-direct-extern-access -o CMakeFiles/SSH_Test.dir/main.cpp.o -c /home/ZheCi/Code/QtDemo/SSH_Test/main.cpp",
+  "file": "/home/ZheCi/Code/QtDemo/SSH_Test/main.cpp",
+  "output": "CMakeFiles/SSH_Test.dir/main.cpp.o"
+},
+{
+  "directory": "/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug",
+  "command": "/usr/bin/g++ -DQT_CONCURRENT_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/include -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtConcurrent -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always -mno-direct-extern-access -o CMakeFiles/SSH_Test.dir/ssh_object.cpp.o -c /home/ZheCi/Code/QtDemo/SSH_Test/ssh_object.cpp",
+  "file": "/home/ZheCi/Code/QtDemo/SSH_Test/ssh_object.cpp",
+  "output": "CMakeFiles/SSH_Test.dir/ssh_object.cpp.o"
+},
+{
+  "directory": "/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug",
+  "command": "/usr/bin/g++ -DQT_CONCURRENT_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/SSH_Test_autogen/include -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtConcurrent -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always -mno-direct-extern-access -o CMakeFiles/SSH_Test.dir/dialog.cpp.o -c /home/ZheCi/Code/QtDemo/SSH_Test/dialog.cpp",
+  "file": "/home/ZheCi/Code/QtDemo/SSH_Test/dialog.cpp",
+  "output": "CMakeFiles/SSH_Test.dir/dialog.cpp.o"
+}
+]
