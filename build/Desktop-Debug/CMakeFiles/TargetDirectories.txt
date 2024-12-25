@@ -1,9 +1,0 @@
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/SSH_Test.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/edit_cache.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/rebuild_cache.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/list_install_components.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/install.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/install/local.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/install/strip.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/SSH_Test_autogen_timestamp_deps.dir
-/home/ZheCi/Code/QtDemo/SSH_Test/build/Desktop-Debug/CMakeFiles/SSH_Test_autogen.dir

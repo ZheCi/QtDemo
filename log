@@ -1,0 +1,602 @@
+#include "dialog.h"
+#include <QThread>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <qboxlayout.h>
+#include <qcoreevent.h>
+#include <qlineedit.h>
+#include <qnamespace.h>
+#include <qpushbutton.h> 
+#include <QtConcurrent>
+void UserInfo::initUI(void)
+{
+    // 连接/断开
+    pushButton_conncetORbreak = new QPushButton("连接/断开");
+
+    // 连接信息Label
+    label_ip = new QLabel("Ip:");
+    label_port = new QLabel("Port:");
+    label_user = new QLabel("Username:");
+    label_password = new QLabel("Password:");
+
+    // 连接信息lineEdit
+    lineEdit_ip = new QLineEdit("127.0.0.1");
+    lineEdit_port = new QLineEdit("55125");
+    lineEdit_user = new QLineEdit("ZheCi");
+    lineEdit_password = new QLineEdit("Dly000919.!");
+
+    // 默认部件状态
+    componentsStatus = true;
+}
+
+bool UserInfo::getComponentsStatus(void)
+{
+    return componentsStatus;
+}
+
+bool UserInfo::setComponentsStatus(bool status)
+{
+    bool oldstatus = componentsStatus;
+    componentsStatus = status;
+    
+    lineEdit_ip->setReadOnly(status);
+    lineEdit_port->setReadOnly(status);
+    lineEdit_user->setReadOnly(status);
+    lineEdit_password->setReadOnly(status);
+
+    return oldstatus;
+}
+
+void CmdInfo::initUI(void)
+{
+    // 执行的命令和正则表达式
+    lineEdit_execCmd = new QLineEdit();
+    lineEdit_execRegular = new QLineEdit();
+
+    // 执行和停止按钮
+    pushButton_startCmd = new QPushButton("Start");
+    pushButton_stopCmd = new QPushButton("Stop");
+}
+
+bool CmdInfo::getComponentsStatus(void)
+{
+    return componentsStatus;
+}
+
+bool CmdInfo::setComponentsStatus(bool status)
+{
+    bool oldstatus = componentsStatus;
+    componentsStatus = status;
+    
+    lineEdit_execCmd->setReadOnly(status);
+    lineEdit_execRegular->setReadOnly(status);
+    pushButton_startCmd->setEnabled(status);
+    pushButton_stopCmd->setEnabled(!status);
+
+    return oldstatus;
+}
+
+Dialog::Dialog(QWidget *parent)
+    : QDialog(parent)
+{
+    initUI();
+    initSignalSlots();
+}
+
+Dialog::~Dialog()
+{
+    delete sshObject;
+}
+
+void Dialog::initUI(void) 
+{
+    // 用户信息
+    userinfo = new UserInfo;
+    userinfo->initUI();
+
+    // 命令信息
+    cmdinfo = new CmdInfo;
+    cmdinfo->initUI();
+
+    // 连接成功提示
+    label_connectSuccse = new QLabel("no connect");
+    label_connectSuccse_color = R"(
+        QLabel { 
+        border: 1px solid #A9A9A9;  
+        border-radius: 5px;           
+        padding: 10px;               
+        font-size: 13px;
+        background-color: white;    
+        }
+    )";
+    label_connectSuccse->setAlignment(Qt::AlignCenter);
+    label_connectSuccse->setStyleSheet(QString::fromStdString(label_connectSuccse_color + "QLabel{color: red;}"));
+
+    // log显示窗口
+    textEdit_logWind = new QTextEdit();
+    textEdit_logWind->setReadOnly(true);
+
+    // 布局
+    QVBoxLayout *VLayout = new QVBoxLayout();
+    QHBoxLayout *HLayout_1 = new QHBoxLayout; 
+    QHBoxLayout *HLayout_2 = new QHBoxLayout; 
+    QHBoxLayout *HLayout_3 = new QHBoxLayout; 
+    QHBoxLayout *HLayout_4 = new QHBoxLayout; 
+
+    userinfo->setLayout(HLayout_1);
+    HLayout_2->addWidget(label_connectSuccse);
+    HLayout_3->addWidget(textEdit_logWind);
+    cmdinfo->setLayout(HLayout_4);
+
+    tes.setLayout(HLayout_3);
+    auto ptr = tes.getElement<QLineEdit>("LineEdit_1");
+    HLayout_3->addWidget(tes.getElement<QLineEdit>("LineEdit_1"));
+
+    VLayout->addLayout(HLayout_1);
+    VLayout->addLayout(HLayout_2);
+    VLayout->addLayout(HLayout_3);
+    VLayout->addLayout(HLayout_4);
+
+    setLayout(VLayout);
+
+    sshObject = new SSHClient(); 
+
+}
+
+void Dialog::initSignalSlots(void)
+{
+    connect(userinfo->pushButton_conncetORbreak, &QPushButton::clicked, [&](){
+        // 设置连接信息不能编辑
+        if(userinfo->lineEdit_ip->isReadOnly())
+        {
+            // 关闭当前的会话, 通道, socket
+            sshObject->destory();
+            userinfo->setComponentsStatus(false);
+            label_connectSuccse->setText("on connect");
+            label_connectSuccse->setStyleSheet(QString::fromStdString(label_connectSuccse_color + "QLabel{color: red;}"));
+        }
+        else
+        {
+            if(userinfo->lineEdit_ip->text().isEmpty() || userinfo->lineEdit_port->text().isEmpty() || userinfo->lineEdit_user->text().isEmpty() || userinfo->lineEdit_password->text().isEmpty())
+                return;
+        // 按照新的信息初始化新的会话
+            if(sshObject->init(userinfo->lineEdit_ip->text().toStdString(), userinfo->lineEdit_port->text().toInt(), userinfo->lineEdit_user->text().toStdString(), userinfo->lineEdit_password->text().toStdString()))
+            {
+                label_connectSuccse->setText("connect");
+                label_connectSuccse->setStyleSheet(QString::fromStdString(label_connectSuccse_color + "QLabel{color: green;}"));
+                userinfo->setComponentsStatus(true);
+            }
+        }
+        });
+    connect(cmdinfo->pushButton_startCmd, &QPushButton::clicked, [&](){
+           QThreadPool::globalInstance()->start([=]() {
+               sshObject->executeCommand(cmdinfo->lineEdit_execCmd->text().toStdString(), [&](const std::string &str){
+                 // 确保 UI 操作在主线程中进行
+                 QMetaObject::invokeMethod(textEdit_logWind, [=]() {
+                     textEdit_logWind->append(QString::fromStdString("========= Cmd(" + cmdinfo->lineEdit_execCmd->text().toStdString() + ") ========="));
+                     textEdit_logWind->append(QString::fromStdString(str));
+                     textEdit_logWind->repaint();
+                 }, Qt::QueuedConnection);
+               });
+           });
+    });
+}
+#include "dialog.h"
+
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+    Dialog w;
+    w.show();
+    return a.exec();
+}
+#include "ssh_object.h"
+
+SSHClient::SSHClient() : session_(nullptr), channel_(nullptr), sock_(-1)
+{
+}
+
+SSHClient::~SSHClient(void)
+{
+    destory();
+}
+
+bool SSHClient::init(const std::string &ip, int port, const std::string &username, const std::string &password) 
+{
+    ip_ = ip;
+    port_ = port;
+    username_ = username;
+    password_ = password;
+
+    return initializeSocker() && initializeSession() && authenticate();
+}
+
+void SSHClient::destory(void)
+{
+    if (channel_) {
+        libssh2_channel_close(channel_);
+        libssh2_channel_free(channel_);
+        channel_ = nullptr;
+    }
+
+    if (session_) {
+        libssh2_session_disconnect(session_, "Normal Shutdown");
+        libssh2_session_free(session_);
+        session_ = nullptr;
+    }
+
+    if (sock_ != -1) {
+        close(sock_);
+        sock_ = -1;
+    }
+
+    libssh2_exit();
+}
+
+bool SSHClient::initializeSocker(void)
+{
+    // 创建套接字
+    sock_ = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_ == -1) {
+        return false;
+    }
+
+    // IP结构提
+    sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port_);
+    inet_pton(AF_INET, ip_.c_str(), &server_addr.sin_addr);
+
+    // 连接套接字
+    if (::connect(sock_, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) { // 使用 ::connect 调用全局函数
+        return false;
+    }
+
+    return  true;
+}
+
+bool SSHClient::initializeSession(void)
+{
+    // 调用会话初始化函数
+    session_ = libssh2_session_init();
+    if (!session_) {
+        return false;
+    }
+
+    // 执行SSH握手
+    if (libssh2_session_handshake(session_, sock_)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool SSHClient::authenticate(void)
+{
+    if (libssh2_userauth_password(session_, username_.c_str(), password_.c_str())) {
+        return false;
+    }
+    return true;
+}
+
+bool SSHClient::openChannel(void)
+{
+    channel_ = libssh2_channel_open_session(session_);
+    while (!channel_) {
+        channel_ = libssh2_channel_open_session(session_);
+        if (!channel_) {
+            int err = libssh2_session_last_error(session_, NULL, NULL, 0);
+            if (err == LIBSSH2_ERROR_EAGAIN) {
+                usleep(5000);
+                continue;
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool SSHClient::sendCommand(const std::string &command) {
+    if (libssh2_channel_exec(channel_, command.c_str())) {
+        return false;
+    }
+    return true;
+}
+#ifndef DIALOG_H
+#define DIALOG_H
+
+#include "ssh_object.h"
+#include <QLabel>
+#include <QDialog>
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QPushButton>
+#include <qcoreevent.h>
+#include <qlineedit.h>
+#include <qobject.h>
+#include <qtmetamacros.h>
+#include <type_traits>
+#include <unordered_map>
+
+template<typename ...ElementType>
+class Components : public QObject
+{
+public:
+    bool componentsStatus;
+    std::unordered_map<std::string, std::variant<ElementType*...>> elements;
+
+    template<typename ...ElementName, 
+        typename = std::enable_if_t<(std::disjunction_v<std::is_same<ElementName, std::string>, std::is_convertible<ElementName, const char*>> && ...)>,
+        typename = std::enable_if_t<sizeof...(ElementType) == sizeof...(ElementName)>>
+    Components(ElementName ...elementNames)
+    {
+        // 展开参数包并初始化 map
+        (elements.emplace(elementNames, new ElementType()),...);
+
+        for (const auto& [key, value] : elements) {
+            std::cout << "Name : " << key << "\nValue:" << std::get<QLineEdit*>(value) << std::endl;
+        }
+
+        componentsStatus = true;
+    }
+
+    ~Components()
+    {
+        for (auto& [name, element] : elements) {
+            std::visit([](auto* ptr) { delete ptr; }, element);
+        }
+    }
+    template<typename T>
+    T* getElement(const std::string& name)
+    {
+        auto it = elements.find(name);
+        if (it != elements.end()) {
+            // 确保类型匹配
+            if (auto* ptr = std::get<T*>(it->second)) {
+                return ptr;
+            } else {
+                qWarning() << "Type mismatch for element: " << QString::fromStdString(name);
+                return nullptr;
+            }
+        } else {
+            qWarning() << "Element not found: " << QString::fromStdString(name);
+            return nullptr;
+        }
+    }
+
+public:
+
+    template<typename LayoutType, typename = decltype(std::declval<LayoutType>().addWidget(nullptr))>
+    void setLayout(LayoutType* layout)
+    {
+        for (auto& [name, element] : elements) {
+            std::visit([&](auto* ptr) { 
+                    layout->addWidget(ptr);
+            }, element);
+        }
+    }
+
+    bool setComponentsStatus(bool status)
+    {
+        bool oldstatus = componentsStatus;
+        componentsStatus = status;
+
+        for (auto& [name, element] : elements) {
+            std::visit([&](auto* ptr) { 
+                    std::cout << "1" << std::endl;
+            }, element);
+        }
+    }
+
+    bool getComponentsStatus(void)
+    {
+        return componentsStatus;
+    }
+};
+
+class UserInfo : public QObject
+{
+    Q_OBJECT
+
+public:
+    UserInfo() = default;
+    ~UserInfo() = default;
+
+public:
+    void initUI(void);
+    bool setComponentsStatus(bool status);
+    bool getComponentsStatus(void);
+    template<typename LayoutType, typename = decltype(std::declval<LayoutType>().addWidget(nullptr))>
+    void setLayout(LayoutType* layout)
+    {
+        layout->addWidget(label_ip);
+        layout->addWidget(lineEdit_ip);
+        layout->addStretch();
+        layout->addWidget(label_port);
+        layout->addWidget(lineEdit_port);
+        layout->addStretch();
+        layout->addWidget(label_user);
+        layout->addWidget(lineEdit_user);
+        layout->addStretch();
+        layout->addWidget(label_password);
+        layout->addWidget(lineEdit_password);
+        layout->addStretch();
+        layout->addWidget(pushButton_conncetORbreak);
+    }
+
+public:
+    // 连接/断开
+    QPushButton *pushButton_conncetORbreak;
+
+    // 连接信息Label
+    QLabel *label_ip;
+    QLabel *label_port;
+    QLabel *label_user;
+    QLabel *label_password;
+
+    // 连接信息lineEdit
+    QLineEdit *lineEdit_ip;
+    QLineEdit *lineEdit_port;
+    QLineEdit *lineEdit_user;
+    QLineEdit *lineEdit_password;
+
+    // 部件状态
+    bool componentsStatus;
+};
+
+class CmdInfo : public QObject
+{
+    Q_OBJECT
+
+public:
+    CmdInfo() = default;
+    ~CmdInfo() = default;
+
+public:
+    void initUI(void);
+    bool setComponentsStatus(bool status);
+    bool getComponentsStatus(void);
+    template<typename LayoutType, typename = decltype(std::declval<LayoutType>().addWidget(nullptr))>
+    void setLayout(LayoutType* layout)
+    {
+        layout->addWidget(lineEdit_execCmd);
+        layout->addWidget(lineEdit_execRegular);
+        layout->addWidget(pushButton_startCmd);
+        layout->addWidget(pushButton_stopCmd);
+    }
+
+public:
+    // 执行的命令和正则表达式
+    QLineEdit *lineEdit_execCmd;
+    QLineEdit *lineEdit_execRegular;
+
+    // 执行和停止按钮
+    QPushButton *pushButton_startCmd;
+    QPushButton *pushButton_stopCmd;
+
+    // 部件状态
+    bool componentsStatus;
+};
+
+class Dialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    Dialog(QWidget *parent = nullptr);
+    ~Dialog();
+
+private:
+
+    Components<QLineEdit> tes("LineEdit_1");
+    // 用户信息
+    UserInfo *userinfo;
+
+    // 命令信息
+    CmdInfo *cmdinfo;
+
+    // 连接成功提示
+    QLabel *label_connectSuccse;
+    std::string label_connectSuccse_color;
+
+    // log显示窗口
+    QTextEdit *textEdit_logWind;
+
+    // ssh对象
+    SSHClient *sshObject;
+
+public:
+    void initUI(void);
+    void initSignalSlots(void);
+};
+
+
+#endif // DIALOG_H
+#pragma once
+
+#include <string>
+#include <cstring>
+#include <type_traits>
+#include <unistd.h>
+#include <iostream>
+#include <libssh2.h>
+#include <arpa/inet.h>
+
+class SSHClient
+{
+public:
+    SSHClient();
+    ~SSHClient();
+
+public:
+    // 初始化
+    bool init(const std::string &ip, int port, const std::string &username, const std::string &password);
+    // 销毁
+    void destory();
+    // 执行命令
+    template<typename FunType, typename = std::enable_if<std::is_invocable_v<FunType, std::string>>>
+    std::string executeCommand(const std::string &command, FunType funobje) {
+        openChannel();
+        sendCommand(command);
+        return readResponse_noback(funobje);
+    }
+private:
+    // 初始化套接字
+    bool initializeSocker();
+    // 初始化ssh会话
+    bool initializeSession();
+    // ssh认证
+    bool authenticate();
+    // 打开通道
+    bool openChannel();
+    // 发送命令
+    bool sendCommand(const std::string &command);
+    // 非阻塞读取响应
+    template<typename FuncType, typename = std::enable_if_t<std::is_invocable_v<FuncType, std::string>>>
+        std::string readResponse_noback(FuncType funobje) {
+        std::string response;
+        char buffer[1024];
+        ssize_t n;
+
+        // 设置非阻塞模式
+        libssh2_channel_set_blocking(channel_, 0);
+
+        while (true) {
+            // 读取数据
+            n = libssh2_channel_read(channel_, buffer, sizeof(buffer));
+            if (n > 0) {
+                funobje(std::string(buffer, n-1));  // 调用回调函数处理数据
+            } else if (n == LIBSSH2_ERROR_EAGAIN) {
+                usleep(50000); // 减少等待时间，提高响应速度
+            } else if (n < 0) {
+                throw std::runtime_error("Error reading from SSH channel");
+            }
+
+            // 检查通道是否已关闭
+            if (libssh2_channel_eof(channel_)) {
+                channel_ = nullptr;
+                break;
+            }
+        }
+        return response;
+    }
+
+private:
+    // 远程IP
+    std::string ip_;
+    // 远程端口
+    int port_;
+    // 远程用户名
+    std::string username_;
+    //  远程密码
+    std::string password_;
+    // 会话
+    LIBSSH2_SESSION *session_;
+    // 通道
+    LIBSSH2_CHANNEL *channel_;
+    // socke
+    int sock_;
+};
