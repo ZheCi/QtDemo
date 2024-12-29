@@ -1,6 +1,9 @@
 #include "ssh_object.h"
 
-SSHClient::SSHClient() : session_(nullptr), channel_(nullptr), sock_(-1)
+SSHClient::SSHClient()
+    : session_(nullptr)
+    , channel_(nullptr)
+    , sock_(-1)
 {
 }
 
@@ -9,7 +12,7 @@ SSHClient::~SSHClient(void)
     destory();
 }
 
-bool SSHClient::init(const std::string &ip, int port, const std::string &username, const std::string &password) 
+bool SSHClient::init(const std::string& ip, int port, const std::string& username, const std::string& password)
 {
     ip_ = ip;
     port_ = port;
@@ -50,17 +53,17 @@ bool SSHClient::initializeSocker(void)
     }
 
     // IP结构提
-    sockaddr_in server_addr{};
+    sockaddr_in server_addr {};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port_);
     inet_pton(AF_INET, ip_.c_str(), &server_addr.sin_addr);
 
     // 连接套接字
-    if (::connect(sock_, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) { // 使用 ::connect 调用全局函数
+    if (::connect(sock_, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) { // 使用 ::connect 调用全局函数
         return false;
     }
 
-    return  true;
+    return true;
 }
 
 bool SSHClient::initializeSession(void)
@@ -105,7 +108,8 @@ bool SSHClient::openChannel(void)
     return true;
 }
 
-bool SSHClient::sendCommand(const std::string &command) {
+bool SSHClient::sendCommand(const std::string& command)
+{
     if (libssh2_channel_exec(channel_, command.c_str())) {
         return false;
     }
